@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
-    id("com.google.gms.google-services") version "4.4.2" apply false // Firebase plugin'ini burada ekleyin.
+    id("com.google.gms.google-services")
+
 }
 
 android {
@@ -49,8 +50,10 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
     // Glide (resim için)
-    implementation("com.github.bumptech.glide:glide:4.15.1")
-    annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
+    implementation ("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+
+    implementation ("com.google.code.gson:gson:2.8.8")
 
     // ViewModel ve LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")

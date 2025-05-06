@@ -1,21 +1,48 @@
-// model/Book.java
 package com.example.mylibraryapp.model;
 
-public class Book {
+import java.io.Serializable;
+
+public class Book implements Serializable {
+    private String id;
     private String title;
     private String authors;
     private String thumbnail;
-    private String id; // Firebase için benzersiz ID
+    private String description;
+    private boolean favorite; // <-- YENİ EKLENDİ
 
-    public Book() {
-        // Boş constructor gerekli
-    }
+    public Book() {}
 
     public Book(String title, String authors, String thumbnail) {
         this.title = title;
         this.authors = authors;
         this.thumbnail = thumbnail;
-        this.id = title + "_" + authors; // Basit bir ID üretimi
+    }
+
+    public Book(String title, String authors, String thumbnail, String description) {
+        this.title = title;
+        this.authors = authors;
+        this.thumbnail = thumbnail;
+        this.description = description;
+    }
+
+    public String getId() {
+        if (id != null) return id;
+
+        // Geçersiz karakterleri kaldır veya değiştir
+        String rawId = (title + "_" + authors)
+                .replace(".", "")
+                .replace("#", "")
+                .replace("$", "")
+                .replace("[", "")
+                .replace("]", "")
+                .replace("/", "_");
+
+        return rawId;
+    }
+
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getTitle() {
@@ -30,7 +57,31 @@ public class Book {
         return thumbnail;
     }
 
-    public String getId() {
-        return id;
+    public String getDescription() {
+        return description != null ? description : "Açıklama bulunamadı.";
+    }
+
+    public boolean isFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        this.favorite = favorite;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setAuthors(String authors) {
+        this.authors = authors;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

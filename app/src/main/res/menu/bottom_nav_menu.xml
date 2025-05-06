@@ -3,6 +3,12 @@
         android:id="@+id/menu_home"
         android:icon="@drawable/ic_home"
         android:title="Anasayfa" />
+
+    <item
+        android:id="@+id/menu_search"
+        android:icon="@drawable/ic_search"
+        android:title="Ara" />
+
     <item
         android:id="@+id/menu_favorites"
         android:icon="@drawable/ic_favorite"

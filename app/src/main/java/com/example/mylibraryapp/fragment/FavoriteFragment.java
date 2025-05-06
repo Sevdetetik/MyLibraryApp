@@ -1,16 +1,13 @@
 package com.example.mylibraryapp.fragment;
 
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.*;
 
 import com.example.mylibraryapp.R;
 import com.example.mylibraryapp.adapter.BookAdapter;
@@ -21,16 +18,17 @@ import com.google.firebase.database.*;
 
 import java.util.ArrayList;
 import java.util.List;
+
 public class FavoriteFragment extends Fragment {
 
     private RecyclerView recyclerView;
-    private BookAdapter adapter;
+    private BookAdapter bookAdapter;
     private List<Book> favoriteBooks;
-    private DatabaseReference favoritesRef;
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_favorites, container, false);
 
@@ -38,39 +36,48 @@ public class FavoriteFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         favoriteBooks = new ArrayList<>();
-        adapter = new BookAdapter(getContext(), favoriteBooks);
-        recyclerView.setAdapter(adapter);
 
-        loadFavorites();
+        // Kitap tıklama olayını ekleyerek adapter'ı oluştur
+        bookAdapter = new BookAdapter(getContext(), favoriteBooks, book -> {
+            // Kitap tıklandığında yapılacak işlem
+            Toast.makeText(getContext(), "Favori Kitap: " + book.getTitle(), Toast.LENGTH_SHORT).show();
+        }, true); // Burada 'true' parametresi FAVORİLER SAYFASINDAN geldiğimizi belirtir
+
+        recyclerView.setAdapter(bookAdapter);
+
+        loadFavoriteBooks();
 
         return view;
     }
 
-    private void loadFavorites() {
+    private void loadFavoriteBooks() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
-            Toast.makeText(getContext(), "Giriş yapmalısınız", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Giriş yapılmamış", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        favoritesRef = FirebaseDatabase.getInstance()
+        DatabaseReference favRef = FirebaseDatabase.getInstance()
                 .getReference("Favorites")
                 .child(user.getUid());
 
-        favoritesRef.addValueEventListener(new ValueEventListener() {
+        favRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 favoriteBooks.clear();
-                for (DataSnapshot bookSnapshot : snapshot.getChildren()) {
-                    Book book = bookSnapshot.getValue(Book.class);
-                    favoriteBooks.add(book);
+                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                    Book book = dataSnapshot.getValue(Book.class);
+                    if (book != null) {
+                        book.setFavorite(true); // Favori olduğunu belirt
+                        favoriteBooks.add(book);
+                    }
                 }
-                adapter.notifyDataSetChanged();
+                bookAdapter.updateList(favoriteBooks);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getContext(), "Favoriler alınamadı", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Favoriler yüklenemedi", Toast.LENGTH_SHORT).show();
             }
         });
     }

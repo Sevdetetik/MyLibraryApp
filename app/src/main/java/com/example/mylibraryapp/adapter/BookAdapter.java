@@ -1,9 +1,7 @@
 package com.example.mylibraryapp.adapter;
 
 import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 import android.widget.*;
 
 import androidx.annotation.NonNull;
@@ -14,8 +12,7 @@ import com.example.mylibraryapp.R;
 import com.example.mylibraryapp.model.Book;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.*;
 
 import java.util.List;
 
@@ -23,69 +20,93 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
 
     private final Context context;
     private List<Book> bookList;
+    private final OnBookClickListener listener;
+    private final boolean fromFavoritesPage; // Favoriler sayfası mı?
 
-    public BookAdapter(Context context, List<Book> bookList){
-        this.context = context;
-        this.bookList = bookList;
+    public interface OnBookClickListener {
+        void onBookClick(Book book);
     }
 
-    public void updateList(List<Book> newBooks){
-        bookList = newBooks;
+    public BookAdapter(Context context, List<Book> bookList, OnBookClickListener listener, boolean fromFavoritesPage) {
+        this.context = context;
+        this.bookList = bookList;
+        this.listener = listener;
+        this.fromFavoritesPage = fromFavoritesPage;
+    }
+
+    public void updateList(List<Book> newBooks) {
+        this.bookList = newBooks;
         notifyDataSetChanged();
     }
 
     @NonNull
     @Override
-    public BookViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType){
+    public BookViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(context).inflate(R.layout.item_book, parent, false);
         return new BookViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull BookViewHolder holder, int position){
+    public void onBindViewHolder(@NonNull BookViewHolder holder, int position) {
         Book book = bookList.get(position);
 
         holder.textViewTitle.setText(book.getTitle());
         holder.textViewAuthor.setText(book.getAuthors());
 
-        // Glide ile kitap kapağını yükle
         Glide.with(context)
-                .load(book.getThumbnail()) // Kitap kapağını yükler
-                .placeholder(R.drawable.ic_book_placeholder) // Placeholder ekler
+                .load(book.getThumbnail())
+                .placeholder(R.drawable.ic_book_placeholder)
                 .into(holder.imageViewCover);
 
-        // Favori butonuna tıklanması durumunda işlem yapılır
+        // Kalp ikonunu doldur/boş göster
+        holder.btnFavorite.setImageResource(book.isFavorite() ?
+                R.drawable.ic_favorite_filled : R.drawable.ic_favorite_border);
+
         holder.btnFavorite.setOnClickListener(v -> {
+            boolean isNowFavorite = !book.isFavorite();
+            book.setFavorite(isNowFavorite);
+
+            holder.btnFavorite.setImageResource(isNowFavorite ?
+                    R.drawable.ic_favorite_filled : R.drawable.ic_favorite_border);
+
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if (user == null) {
-                // Kullanıcı giriş yapmamışsa uyarı göster
-                Toast.makeText(context, "Lütfen giriş yapın", Toast.LENGTH_SHORT).show();
-                return;
+            if (user != null) {
+                DatabaseReference favRef = FirebaseDatabase.getInstance()
+                        .getReference("Favorites")
+                        .child(user.getUid())
+                        .child(book.getId());
+
+                if (isNowFavorite) {
+                    favRef.setValue(book);
+                } else {
+                    favRef.removeValue();
+
+                    // Favoriler sayfasında isek, listeden de sil
+                    if (fromFavoritesPage) {
+                        int pos = holder.getAdapterPosition();
+                        if (pos != RecyclerView.NO_POSITION) {
+                            bookList.remove(pos);
+                            notifyItemRemoved(pos);
+                        }
+                    }
+                }
             }
-
-            // Firebase'e favori olarak kaydet
-            DatabaseReference favRef = FirebaseDatabase.getInstance()
-                    .getReference("Favorites")
-                    .child(user.getUid())
-                    .child(book.getId() != null ? book.getId() : book.getTitle() + "_" + book.getAuthors());  // Eğer book.getId() null ise, title + authors kombinasyonu kullanılabilir
-
-            favRef.setValue(book)
-                    .addOnSuccessListener(unused -> Toast.makeText(context, "Favorilere eklendi", Toast.LENGTH_SHORT).show())
-                    .addOnFailureListener(e -> Toast.makeText(context, "Favori kaydı başarısız!", Toast.LENGTH_SHORT).show());
         });
+
+        holder.itemView.setOnClickListener(v -> listener.onBookClick(book));
     }
 
     @Override
-    public int getItemCount(){
+    public int getItemCount() {
         return bookList.size();
     }
 
-    static class BookViewHolder extends RecyclerView.ViewHolder{
+    static class BookViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewCover;
         TextView textViewTitle, textViewAuthor;
         ImageButton btnFavorite;
 
-        public BookViewHolder(@NonNull View itemView){
+        public BookViewHolder(@NonNull View itemView) {
             super(itemView);
             imageViewCover = itemView.findViewById(R.id.imageViewCover);
             textViewTitle = itemView.findViewById(R.id.textViewTitle);

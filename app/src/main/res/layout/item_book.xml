@@ -50,10 +50,10 @@
 
         <ImageButton
             android:id="@+id/btnFavorite"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_favorite_border"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Favorilere Ekle" />
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Favorilere Ekle"
+            android:src="@drawable/ic_favorite_border" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>
